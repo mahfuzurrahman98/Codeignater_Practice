@@ -10,27 +10,55 @@ class AuthController extends ResourceController {
   protected $format = 'json';
 
   public function register() {
+
+    $data = $this->request->getJSON();
+
     // validate user input
-    $validation =  \Config\Services::validation();
-    $validation->setRules([
-      'name' => 'required',
-      'email' => 'required|valid_email|is_unique[users.email]',
-      'password' => 'required'
-    ]);
-    if (!$validation->run($this->request->getPost())) {
-      return $this->respond(['error' => $validation->getErrors()], 400);
+    try {
+      $validation =  \Config\Services::validation();
+      $x = 79;
+      $validation->setRules([
+        'name' => 'required',
+        'email' => 'required|valid_email|is_unique[users.email]',
+        'password' => 'required'
+      ]);
+
+      $flag = $validation->run($data);
+      // echo 1;
+      // die;
+
+      // if (!$validation->run($data)) {
+      //   return $this->respond(['error' => 'asfsadf'], 400);
+      // }
+    } catch (\Exception $e) {
+      // echo "asfsadf";
+      // die;
+      return $this->respond(['error' => $e->getMessage()], 500);
     }
+    // try {
+    //   $x = $validation->run($data);
+    // } catch (\Exception $e) {
+    //   return $this->respond(['error' => $e->getMessage()], 500);
+    // }
+
+    // if (!$validation->run($data)) {
+    //   return $this->respond(['error' => 'asfsadf'], 400);
+    // }
+    return $this->respond($data);
 
     // save user to database
-    $user = new UserModel();
-    $user->fill($this->request->getPost());
-    $user->password = password_hash($this->request->getPost('password'), PASSWORD_DEFAULT);
-    $user->save();
+    try {
+      $user = new UserModel();
+      $data->password = password_hash($this->request->getPost('password'), PASSWORD_DEFAULT);
+      $user->save($data);
 
-    // generate JWT token
-    $token = JWT::encode(['email' => $user->email], getenv('JWT_SECRET'));
+      // generate JWT token
+      $token = JWT::encode(['email' => $data->email], getenv('JWT_SECRET'), 'HS256');
 
-    return $this->respond(['token' => $token]);
+      return $this->respond(['token' => $token], 201);
+    } catch (\Exception $e) {
+      return $this->respond(['error' => $e->getMessage()], 500);
+    }
   }
 
   public function login() {

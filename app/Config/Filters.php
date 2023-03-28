@@ -9,8 +9,7 @@ use CodeIgniter\Filters\Honeypot;
 use CodeIgniter\Filters\InvalidChars;
 use CodeIgniter\Filters\SecureHeaders;
 
-class Filters extends BaseConfig
-{
+class Filters extends BaseConfig {
     /**
      * Configures aliases for Filter classes to
      * make reading things nicer and simpler.
@@ -51,7 +50,9 @@ class Filters extends BaseConfig
      * permits any HTTP method to access a controller. Accessing the controller
      * with a method you don’t expect could bypass the filter.
      */
-    public array $methods = [];
+    public array $methods = [
+        'auth' => ['filter' => 'jwt']
+    ];
 
     /**
      * List of filter aliases that should run on any
@@ -60,5 +61,7 @@ class Filters extends BaseConfig
      * Example:
      * 'isLoggedIn' => ['before' => ['account/*', 'profiles/*']]
      */
-    public array $filters = [];
+    public array $filters = [
+        'jwt' => \App\Filters\JWT::class
+    ];
 }
