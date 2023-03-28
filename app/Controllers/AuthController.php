@@ -2,91 +2,115 @@
 
 namespace App\Controllers;
 
-use App\Models\UserModel;
-use CodeIgniter\RESTful\ResourceController;
+use App\Libraries\Hash;
 use Firebase\JWT\JWT;
+use App\Models\UserModel;
+use CodeIgniter\Controller;
+use CodeIgniter\API\ResponseTrait;
 
-class AuthController extends ResourceController {
-  protected $format = 'json';
+
+class AuthController extends Controller {
+  use ResponseTrait;
+
+  public function formatResponse($statusCode, $message, $data = NULL) {
+
+    $response = [
+      'status' => $statusCode,
+      'success' => $statusCode / 100 == 2 ? true : false,
+      'message' => $message
+    ];
+
+    if (is_array($data) && empty($data)) {
+      $response['data'] = array();
+    }
+
+    if ($data != NULL) {
+      $response['data'] = $data;
+    }
+
+    return [$response, $statusCode];
+  }
 
   public function register() {
+    $data =  $this->request->getJSON();
 
-    $data = $this->request->getJSON();
-
-    // validate user input
     try {
-      $validation =  \Config\Services::validation();
-      $x = 79;
+      $validation = \Config\Services::validation();
+
       $validation->setRules([
         'name' => 'required',
         'email' => 'required|valid_email|is_unique[users.email]',
         'password' => 'required'
       ]);
 
-      $flag = $validation->run($data);
-      // echo 1;
-      // die;
+      if (!$validation->run((array)$data)) {
+        return $this->respond(
+          [
+            'success' => false,
+            'status' => 400,
+            'message' => $validation->getErrors()
+          ],
+          400
+        );
+      }
 
-      // if (!$validation->run($data)) {
-      //   return $this->respond(['error' => 'asfsadf'], 400);
-      // }
+      $userModel = new UserModel();
+
+      $data->password = Hash::make($data->password);
+      $userModel->save($data);
+
+      return $this->respond(
+        [
+          'success' => true,
+          'status' => 201,
+          'message' => 'User created successfully',
+          'data' => [
+            'id' => $userModel->getInsertID(),
+            'name' => $data->name,
+            'email' => $data->email
+          ]
+        ],
+        201
+      );
     } catch (\Exception $e) {
-      // echo "asfsadf";
-      // die;
-      return $this->respond(['error' => $e->getMessage()], 500);
-    }
-    // try {
-    //   $x = $validation->run($data);
-    // } catch (\Exception $e) {
-    //   return $this->respond(['error' => $e->getMessage()], 500);
-    // }
-
-    // if (!$validation->run($data)) {
-    //   return $this->respond(['error' => 'asfsadf'], 400);
-    // }
-    return $this->respond($data);
-
-    // save user to database
-    try {
-      $user = new UserModel();
-      $data->password = password_hash($this->request->getPost('password'), PASSWORD_DEFAULT);
-      $user->save($data);
-
-      // generate JWT token
-      $token = JWT::encode(['email' => $data->email], getenv('JWT_SECRET'), 'HS256');
-
-      return $this->respond(['token' => $token], 201);
-    } catch (\Exception $e) {
-      return $this->respond(['error' => $e->getMessage()], 500);
+      return $this->respond(
+        [
+          'success' => false,
+          'status' => 500,
+          'message' => $e->getMessage()
+        ],
+        500
+      );
     }
   }
 
-  public function login() {
-    // validate user input
-    $validation =  \Config\Services::validation();
-    $validation->setRules([
-      'email' => 'required|valid_email',
-      'password' => 'required'
-    ]);
-    if (!$validation->run($this->request->getPost())) {
-      return $this->respond(['error' => $validation->getErrors()], 400);
-    }
+  // public function login() {
+  //   // validate user input
+  //   $validation =  \Config\Services::validation();
+  //   $validation->setRules([
+  //     'email' => 'required|valid_email',
+  //     'password' => 'required'
+  //   ]);
 
-    // authenticate user
-    $user = new UserModel();
-    $user = $user->where('email', $this->request->getPost('email'))->first();
-    if (!$user || !password_verify($this->request->getPost('password'), $user->password)) {
-      return $this->respond(['error' => 'Invalid email or password'], 401);
-    }
+  //   if (!$validation->run($this->request->getPost())) {
+  //     return $this->respond(['error' => $validation->getErrors()], 400);
+  //   }
 
-    // generate JWT token
-    $token = JWT::encode(['email' => $user->email], getenv('JWT_SECRET'));
+  //   // authenticate user
+  //   $user = new UserModel();
+  //   $user = $user->where('email', $this->request->getPost('email'))->first();
+  //   if (!$user || !password_verify($this->request->getPost('password'), $user->password)) {
+  //     return $this->respond(['error' => 'Invalid email or password'], 401);
+  //   }
 
-    return $this->respond(['token' => $token]);
-  }
+  //   // generate JWT token
+  //   $token = JWT::encode(['email' => $user->email], getenv('JWT_SECRET'), 'HS256');
 
-  public function logout() {
-    // invalidate JWT token
-    return $this->respond(['message' => 'Logged out']);
-  }
+  //   return $this->respond(['token' => $token]);
+  // }
+
+  // public function logout() {
+  //   // invalidate JWT token
+  //   return $this->respond(['message' => 'Logged out']);
+  // }
 }
