@@ -31,6 +31,8 @@ $routes->set404Override();
 // route since we don't have to scan directories.
 $routes->get('/', 'Home::index');
 $routes->post('auth/register', 'AuthController::register');
+$routes->post('auth/login', 'AuthController::login');
+$routes->post('auth/profile', 'AuthController::profile', ['filter' => 'auth']);
 
 
 /*
