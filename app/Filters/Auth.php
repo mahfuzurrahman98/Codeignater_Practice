@@ -3,9 +3,6 @@
 namespace App\Filters;
 
 use App\Libraries\AuthToken;
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
-use \CodeIgniter\API\ResponseTrait;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\Filters\FilterInterface;
@@ -33,8 +30,6 @@ class Auth implements FilterInterface {
       $decoded = AuthToken::verify($jwt);
       $request->user = $decoded->user;
     } catch (\Exception $e) {
-      // var_dump($e->getMessage());
-      // die;
       http_response_code(401);
       echo json_encode([
         'success' => false,

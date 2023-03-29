@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Libraries\Hash;
-use Firebase\JWT\JWT;
 use App\Models\UserModel;
 use App\Controllers\BaseController;
 use App\Libraries\AuthToken;
