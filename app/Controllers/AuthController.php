@@ -5,12 +5,13 @@ namespace App\Controllers;
 use App\Libraries\Hash;
 use App\Models\UserModel;
 use App\Controllers\BaseController;
+use App\Libraries\ApiResponse;
 use App\Libraries\AuthToken;
 use CodeIgniter\API\ResponseTrait;
 
 
 class AuthController extends BaseController {
-  use ResponseTrait;
+  // use ResponseTrait;
 
   protected $validator;
   protected $model;
@@ -23,9 +24,9 @@ class AuthController extends BaseController {
   }
 
   public function register() {
-    $data = (array)$this->request->getJSON();
-
     try {
+      $data = (array)$this->request->getJSON();
+
       $this->validator->setRules([
         'name' => 'required',
         'email' => 'required|valid_email|is_unique[users.email]',
@@ -46,28 +47,14 @@ class AuthController extends BaseController {
       $data['password'] = Hash::make($data['password']);
       $this->model->save($data);
 
-      return $this->respond(
-        [
-          'success' => true,
-          'status' => 201,
-          'message' => 'User created successfully',
-          'data' => [
-            'id' => $this->model->getInsertID(),
-            'name' => $data['name'],
-            'email' => $data['email']
-          ]
-        ],
-        201
-      );
+      $userData = [
+        'id' => $this->model->getInsertID(),
+        'name' => $data['name'],
+        'email' => $data['email']
+      ];
+      ApiResponse::send(201, 'User created successfully', $userData);
     } catch (\Exception $e) {
-      return $this->respond(
-        [
-          'success' => false,
-          'status' => 500,
-          'message' => $e->getMessage()
-        ],
-        500
-      );
+      ApiResponse::send(500, $e->getMessage());
     }
   }
 
@@ -81,71 +68,39 @@ class AuthController extends BaseController {
       ]);
 
       if (!$this->validator->run($data)) {
-        return $this->respond(
-          [
-            'success' => false,
-            'status' => 400,
-            'message' => $this->validator->getErrors()
-          ],
-          400
-        );
+        ApiResponse::send(400, $this->validator->getErrors());
       }
 
       $user = $this->model->where('email', $data['email'])->first();
 
       if (!$user || !Hash::verify($data['password'], $user['password'])) {
-        return $this->respond(
-          [
-            'success' => false,
-            'status' => 401,
-            'message' => 'Invalid email or password'
-          ],
-          401
-        );
+        ApiResponse::send(401, 'Invalid email or password');
       }
 
-      return $this->respond(
-        [
-          'success' => true,
-          'status' => 200,
-          'message' => 'User logged in successfully',
-          'token' => AuthToken::create($user),
-          'data' => [
-            'id' => $user['id'],
-            'name' => $user['name'],
-            'email' => $user['email']
-          ]
-        ],
-        200
-      );
-    } catch (\Exception $e) {
-      return $this->respond(
-        [
-          'success' => false,
-          'status' => 500,
-          'message' => $e->getMessage()
-        ],
-        500
-      );
-    }
-  }
-
-  public function profile() {
-    $user = $this->request->user;
-
-    return $this->respond(
-      [
-        'success' => true,
-        'status' => 200,
-        'message' => 'User profile',
-        'data' => [
+      ApiResponse::send(200, 'User logged in successfully', [
+        'token' => AuthToken::create([
+          'id' => $user['id'],
+          'name' => $user['name'],
+          'email' => $user['email']
+        ]),
+        'user' => [
           'id' => $user['id'],
           'name' => $user['name'],
           'email' => $user['email']
         ]
-      ],
-      200
-    );
+      ]);
+    } catch (\Exception $e) {
+      ApiResponse::send(500, $e->getMessage());
+    }
+  }
+
+  public function profile() {
+    try {
+      $user = (array) $this->request->user;
+      ApiResponse::send(200, 'User profile', $user);
+    } catch (\Exception $e) {
+      ApiResponse::send(500, $e->getMessage());
+    }
   }
 
   // public function logout() {
