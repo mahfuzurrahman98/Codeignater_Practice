@@ -7,8 +7,7 @@ use CodeIgniter\Database\Config;
 /**
  * Database Configuration
  */
-class Database extends Config
-{
+class Database extends Config {
     /**
      * The directory that holds the Migrations
      * and Seeds directories.
@@ -30,7 +29,7 @@ class Database extends Config
         'username' => '',
         'password' => '',
         'database' => '',
-        'DBDriver' => 'MySQLi',
+        'DBDriver' => 'Postgre',
         'DBPrefix' => '',
         'pConnect' => false,
         'DBDebug'  => true,
@@ -41,7 +40,7 @@ class Database extends Config
         'compress' => false,
         'strictOn' => false,
         'failover' => [],
-        'port'     => 3306,
+        'port'     => 5432,
     ];
 
     /**
@@ -70,8 +69,7 @@ class Database extends Config
         'busyTimeout' => 1000,
     ];
 
-    public function __construct()
-    {
+    public function __construct() {
         parent::__construct();
 
         // Ensure that we always set the database group to 'tests' if
