@@ -2,6 +2,7 @@
 
 namespace App\Filters;
 
+use App\Libraries\ApiResponse;
 use App\Libraries\AuthToken;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -28,15 +29,9 @@ class Auth implements FilterInterface {
       $authHeader = $request->header('Authorization');
       $jwt = explode(' ', $authHeader->getValue())[1];
       $decoded = AuthToken::verify($jwt);
-      $request->user = $decoded->user;
+      $request->user = $decoded['user'];
     } catch (\Exception $e) {
-      http_response_code(401);
-      echo json_encode([
-        'success' => false,
-        'status' => 401,
-        'message' => 'Unauthorized'
-      ]);
-      die;
+      ApiResponse::send(401, 'Unauthorized');
     }
   }
 
