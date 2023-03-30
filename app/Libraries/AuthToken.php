@@ -6,8 +6,8 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
 class AuthToken {
-  protected $issuer = 'http://localhost:8080';
-  protected $audience = 'http://localhost:8080';
+  private static $issuer = 'localhost';
+  private static $audience = 'localhost';
 
   public static function create($user) {
     $payload = [
@@ -30,6 +30,6 @@ class AuthToken {
 
   public static function verify($token) {
     $decoded = JWT::decode($token, new Key(getenv('JWT_SECRET'), 'HS256'));
-    return (array)$decoded->user;
+    return (array)$decoded;
   }
 }
