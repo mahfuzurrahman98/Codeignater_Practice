@@ -34,14 +34,7 @@ class AuthController extends BaseController {
       ]);
 
       if (!$this->validator->run($data)) {
-        return $this->respond(
-          [
-            'success' => false,
-            'status' => 400,
-            'message' => $this->validator->getErrors()
-          ],
-          400
-        );
+        ApiResponse::send(400, 'Validation error', $this->validator->getErrors());
       }
 
       $data['password'] = Hash::make($data['password']);
